@@ -1,0 +1,5 @@
+/venv
+README.md
+requirements.txt
+/.github/workflows
+.env
