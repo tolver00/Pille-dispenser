@@ -61,7 +61,7 @@ def fetch_from_db(patient_id):
         if conn is not None:
             conn.close()
 
-print(fetch_from_db(2))
+# print(fetch_from_db(2))
 
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
@@ -69,14 +69,10 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
     cur = None
     try:
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
-        sql_string = ("""
-            INSERT INTO patients (first_name, last_name, age, blood_type, allergies)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id;
-                    """)
+        sql_string = "CALL add_patient(%s, %s, %s, %s, %s, %s)"
         conn = psycopg2.connect(conn_string)
         cur = conn.cursor()
-        cur.execute(sql_string, (first_name, last_name, age, blood_type, allergies))
+        cur.execute(sql_string, (first_name, last_name, age, blood_type, allergies, None))
         conn.commit()
     except Exception as e:
         print(f"database error: {e}")
@@ -86,7 +82,7 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
         if conn is not None:
             conn.close()
 
-# insert_into_db("lars", "larsen", 22, "a", "different allergy")
+insert_into_db("per", "persen", 44, "b", "nuts")
 
 # Class for inserting patient data
 class PatientIn(Schema):
