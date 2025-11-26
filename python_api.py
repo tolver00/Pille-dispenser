@@ -50,7 +50,7 @@ def fetch_from_db():
         conn = psycopg2.connect(conn_string)
         cur = conn.cursor()
         cur.execute("SELECT * FROM patients;")
-        records = cur.fetchone()
+        records = cur.fetchall()
         return records
     except Exception as e:
         print(f"database error: {e}")
@@ -60,7 +60,7 @@ def fetch_from_db():
         if conn is not None:
             conn.close()
 
-# print(fetch_from_db())
+print(fetch_from_db())
 
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
     conn = None
@@ -84,7 +84,7 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
         if conn is not None:
             conn.close()
 
-insert_into_db("lars", "larsen", 22, "a", "different allergy")
+# insert_into_db("lars", "larsen", 22, "a", "different allergy")
 
 
 """ app = APIFlask(__name__)
