@@ -50,7 +50,8 @@ def fetch_from_db(patient_id):
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
         conn = psycopg2.connect(conn_string)
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute("SELECT * FROM patients where id = %s;", (patient_id,))
+        cur.execute("CALL get_patient(%s, %s);", (patient_id, None))
+        cur.execute("FETCH ALL FROM patient_cursor;")
         records = cur.fetchone()
         return records
     except Exception as e:
@@ -61,7 +62,7 @@ def fetch_from_db(patient_id):
         if conn is not None:
             conn.close()
 
-# print(fetch_from_db(2))
+# print(fetch_from_db(5))
 
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
@@ -82,12 +83,12 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
         if conn is not None:
             conn.close()
 
-insert_into_db("per", "persen", 44, "b", "nuts")
+# insert_into_db("per", "persen", 44, "b", "nuts")
 
 # Class for inserting patient data
 class PatientIn(Schema):
     first_name = String(required=True)
-    last_namee = String(required=True)
+    last_name = String(required=True)
     age = Integer(required=True)
     blood_type = String(required=True)
     allergies = String(required=True)
@@ -95,7 +96,7 @@ class PatientIn(Schema):
 # Class for fetching patient
 class PatientOut(Schema):
     first_name = String(required=True)
-    last_namee = String(required=True)
+    last_name = String(required=True)
     age = Integer(required=True)
     blood_type = String(required=True)
     allergies = String(required=True)
@@ -110,6 +111,10 @@ def add_new_patient(json_data):
     return {'message': 'created'}, 201
 
 @app.get('/fetch_patient')
-def get_patient_info():
-    fetch_from_db(patient_id)
-    
+def get_patient_info(patient_id):
+    patient_id = request.args.get("patient_id", type=int)
+    patient = fetch_from_db(patient_id)
+    if patient:
+        return dict(patient)
+    else:
+        return {"message": "not found"}, 404
