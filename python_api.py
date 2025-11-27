@@ -4,6 +4,7 @@ from apiflask.fields import Integer, String, DateTime
 import psycopg2
 from psycopg2 import extras
 from dotenv import load_dotenv
+from flask import request
 
 load_dotenv()
 
@@ -110,11 +111,11 @@ def add_new_patient(json_data):
     insert_into_db(json_data["first_name"], json_data["last_name"], json_data["age"], json_data["blood_type"], json_data["allergies"])
     return {'message': 'created'}, 201
 
-@app.get('/fetch_patient')
+@app.get('/fetch_patient/<int:patient_id>')
+@app.output(PatientOut)
 def get_patient_info(patient_id):
-    patient_id = request.args.get("patient_id", type=int)
-    patient = fetch_from_db(patient_id)
-    if patient:
-        return dict(patient)
+    record = fetch_from_db(patient_id)
+    if record:
+        return dict(record)
     else:
-        return {"message": "not found"}, 404
+        return {'message': 'not found'}, 404
