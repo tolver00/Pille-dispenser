@@ -8,7 +8,7 @@ def client():
 
 
 
-def test_insert_into_db():
+def test_insert_into_db(client):
     response = client.post(
         "/add_patient",
         json={
