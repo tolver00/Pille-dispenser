@@ -15,7 +15,7 @@ def test_insert_into_db():
             "first_name": "test",
             "last_name": "test",
             "age": 33,
-            "blood_type": "a"
+            "blood_type": "a",
             "allergies": "none"
         }
     )
