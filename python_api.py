@@ -1,8 +1,8 @@
 import os
 from apiflask import APIFlask, Schema
 from apiflask.fields import Integer, String, DateTime
-import psycopg2
-from psycopg2 import extras
+import psycopg
+from psycopg.rows import dict_row
 from dotenv import load_dotenv
 from flask import request
 
@@ -19,7 +19,7 @@ DB_PASSWORD =   os.getenv("DB_PASSWORD")
 def create_patients_table():
     try:
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
-        conn = psycopg2.connect(conn_string)
+        conn = psycopg.connect(conn_string)
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute("""
@@ -49,8 +49,8 @@ def fetch_from_db(patient_id):
     cur = None
     try:
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
-        conn = psycopg2.connect(conn_string)
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        conn = psycopg.connect(conn_string)
+        cur = conn.cursor(row_factory=dict_row)
         cur.execute("CALL get_patient(%s, %s);", (patient_id, None))
         cur.execute("FETCH ALL FROM patient_cursor;")
         records = cur.fetchone()
@@ -72,7 +72,7 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
     try:
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
         sql_string = "CALL add_patient(%s, %s, %s, %s, %s, %s)"
-        conn = psycopg2.connect(conn_string)
+        conn = psycopg.connect(conn_string)
         cur = conn.cursor()
         cur.execute(sql_string, (first_name, last_name, age, blood_type, allergies, None))
         conn.commit()
