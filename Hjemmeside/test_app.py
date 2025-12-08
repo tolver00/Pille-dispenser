@@ -1,145 +1,215 @@
-from flask import Flask, render_template
-from dotenv import load_dotenv
-import os
-import psycopg
-
-load_dotenv()
-
-# Database config
-HOST = os.getenv("HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT")
-
-assert HOST is not None, "HOST environment variable is not set"
-assert DB_NAME is not None, "DB_NAME environment variable is not set"
-assert DB_USER is not None, "DB_USER environment variable is not set"
-assert DB_PASSWORD is not None, "DB_PASSWORD environment variable is not set"
-assert DB_PORT is not None, "DB_PORT environment variable is not set"
+import pytest
+from unittest.mock import patch, MagicMock
+from app import app, get_db_connection, fetch_patient_by_id, fetch_all_patients
 
 
-def get_db_connection():
-    conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD} port={DB_PORT}"
-    conn = psycopg.connect(conn_string)
-    assert conn is not None, "Database connection failed"
-    return conn
+@pytest.fixture
+def client():
+    """Flask test client fixture"""
+    app.config['TESTING'] = True
+    with app.test_client() as client:
+        yield client
 
 
-def fetch_patient_by_id(patient_id):
-    assert isinstance(patient_id, int), "patient_id must be an integer"
-    assert patient_id > 0, "patient_id must be positive"
+@pytest.fixture
+def mock_db_connection():
+    """Mock database connection"""
+    with patch('app.get_db_connection') as mock_conn:
+        yield mock_conn
+
+
+class TestDatabaseFunctions:
+    """Test database interaction functions"""
     
-    conn = None
-    cur = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        assert cur is not None, "Failed to create cursor"
+    def test_fetch_patient_by_id_success(self, mock_db_connection):
+        """Test fetching a patient successfully"""
+        # Setup mock
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (1, 'John', 'Doe', 30, 'A+', 'None')
         
-        cur.execute(
-            "SELECT id, first_name, last_name, age, blood_type, allergies FROM patients WHERE id = %s;",
-            (patient_id,)
-        )
-        records = cur.fetchone()
+        # Execute
+        result = fetch_patient_by_id(1)
         
-        if records:
-            assert len(records) == 6, "Expected 6 columns in patient record"
-            columns = ['id', 'first_name', 'last_name', 'age', 'blood_type', 'allergies']
-            patient_dict = dict(zip(columns, records))
-            
-            assert 'id' in patient_dict, "Patient record missing 'id'"
-            assert 'first_name' in patient_dict, "Patient record missing 'first_name'"
-            assert 'last_name' in patient_dict, "Patient record missing 'last_name'"
-            
-            return patient_dict
-        return None
+        # Assert
+        assert result is not None
+        assert result['id'] == 1
+        assert result['first_name'] == 'John'
+        assert result['last_name'] == 'Doe'
+        assert result['age'] == 30
+        assert result['blood_type'] == 'A+'
+        assert result['allergies'] == 'None'
         
-    except Exception as e:
-        print(f"Database error: {e}")
-        return None
-        
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
-def fetch_all_patients():
-    conn = None
-    cur = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        assert cur is not None, "Failed to create cursor"
-        
-        cur.execute("SELECT id, first_name, last_name, age, blood_type, allergies FROM patients ORDER BY id;")
-        records = cur.fetchall()
-        
-        assert isinstance(records, list), "Expected list of records"
-        
-        columns = ['id', 'first_name', 'last_name', 'age', 'blood_type', 'allergies']
-        patients = [dict(zip(columns, row)) for row in records]
-        
-        for patient in patients:
-            assert len(patient) == 6, f"Patient record has incorrect number of fields: {len(patient)}"
-            assert 'id' in patient, "Patient record missing 'id'"
-        
-        return patients
-        
-    except Exception as e:
-        print(f"Database error: {e}")
-        return []
-        
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
-app = Flask(__name__, template_folder='templates')
-
-
-@app.route('/')
-def index():
-    all_patients = fetch_all_patients()
-    assert isinstance(all_patients, list), "all_patients must be a list"
-    return render_template('hovedside.html', patient=None, all_patients=all_patients)
-
-
-@app.route('/sysinfo')
-def sysinfo():
-    patient_data = fetch_patient_by_id(1)
-    return render_template('sysinfo.html', patient=patient_data)
-
-
-@app.route('/patients')
-def patients_list():
-    all_patients = fetch_all_patients()
-    assert isinstance(all_patients, list), "all_patients must be a list"
-    return render_template('patients.html', patients=all_patients, all_patients=all_patients)
-
-
-@app.route('/patient/<int:patient_id>')
-def patient_detail(patient_id):
-    assert isinstance(patient_id, int), "patient_id must be an integer"
-    assert patient_id > 0, "patient_id must be positive"
+        # Verify cursor was closed
+        mock_cursor.close.assert_called_once()
+        mock_conn.close.assert_called_once()
     
-    patient_data = fetch_patient_by_id(patient_id)
-    all_patients = fetch_all_patients()
+    def test_fetch_patient_by_id_not_found(self, mock_db_connection):
+        """Test fetching a non-existent patient"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = None
+        
+        result = fetch_patient_by_id(999)
+        
+        assert result is None
     
-    assert isinstance(all_patients, list), "all_patients must be a list"
+    def test_fetch_patient_by_id_database_error(self, mock_db_connection):
+        """Test database error handling"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.execute.side_effect = Exception("Database error")
+        
+        result = fetch_patient_by_id(1)
+        
+        assert result is None
     
-    if patient_data:
-        assert isinstance(patient_data, dict), "patient_data must be a dictionary"
-        return render_template('hovedside.html', patient=patient_data, all_patients=all_patients)
-    return "Patient not found", 404
+    def test_fetch_all_patients_success(self, mock_db_connection):
+        """Test fetching all patients successfully"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchall.return_value = [
+            (1, 'John', 'Doe', 30, 'A+', 'None'),
+            (2, 'Jane', 'Smith', 25, 'B-', 'Penicillin')
+        ]
+        
+        result = fetch_all_patients()
+        
+        assert len(result) == 2
+        assert result[0]['first_name'] == 'John'
+        assert result[1]['first_name'] == 'Jane'
+    
+    def test_fetch_all_patients_empty(self, mock_db_connection):
+        """Test fetching patients when database is empty"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchall.return_value = []
+        
+        result = fetch_all_patients()
+        
+        assert result == []
+    
+    def test_fetch_all_patients_database_error(self, mock_db_connection):
+        """Test database error when fetching all patients"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.execute.side_effect = Exception("Connection lost")
+        
+        result = fetch_all_patients()
+        
+        assert result == []
+
+
+class TestRoutes:
+    """Test Flask routes"""
+    
+    @patch('app.fetch_all_patients')
+    def test_index_route(self, mock_fetch_all, client):
+        """Test the index route"""
+        mock_fetch_all.return_value = [
+            {'id': 1, 'first_name': 'John', 'last_name': 'Doe', 'age': 30, 'blood_type': 'A+', 'allergies': 'None'}
+        ]
+        
+        response = client.get('/')
+        
+        assert response.status_code == 200
+        mock_fetch_all.assert_called_once()
+    
+    @patch('app.fetch_patient_by_id')
+    def test_sysinfo_route(self, mock_fetch_patient, client):
+        """Test the sysinfo route"""
+        mock_fetch_patient.return_value = {
+            'id': 1, 'first_name': 'John', 'last_name': 'Doe', 
+            'age': 30, 'blood_type': 'A+', 'allergies': 'None'
+        }
+        
+        response = client.get('/sysinfo')
+        
+        assert response.status_code == 200
+        mock_fetch_patient.assert_called_once_with(1)
+    
+    @patch('app.fetch_all_patients')
+    def test_patients_list_route(self, mock_fetch_all, client):
+        """Test the patients list route"""
+        mock_fetch_all.return_value = [
+            {'id': 1, 'first_name': 'John', 'last_name': 'Doe', 'age': 30, 'blood_type': 'A+', 'allergies': 'None'},
+            {'id': 2, 'first_name': 'Jane', 'last_name': 'Smith', 'age': 25, 'blood_type': 'B-', 'allergies': 'Penicillin'}
+        ]
+        
+        response = client.get('/patients')
+        
+        assert response.status_code == 200
+        mock_fetch_all.assert_called_once()
+    
+    @patch('app.fetch_all_patients')
+    @patch('app.fetch_patient_by_id')
+    def test_patient_detail_route_success(self, mock_fetch_patient, mock_fetch_all, client):
+        """Test patient detail route with valid patient"""
+        mock_fetch_patient.return_value = {
+            'id': 1, 'first_name': 'John', 'last_name': 'Doe', 
+            'age': 30, 'blood_type': 'A+', 'allergies': 'None'
+        }
+        mock_fetch_all.return_value = []
+        
+        response = client.get('/patient/1')
+        
+        assert response.status_code == 200
+        mock_fetch_patient.assert_called_once_with(1)
+    
+    @patch('app.fetch_all_patients')
+    @patch('app.fetch_patient_by_id')
+    def test_patient_detail_route_not_found(self, mock_fetch_patient, mock_fetch_all, client):
+        """Test patient detail route with non-existent patient"""
+        mock_fetch_patient.return_value = None
+        mock_fetch_all.return_value = []
+        
+        response = client.get('/patient/999')
+        
+        assert response.status_code == 404
+        assert b"Patient not found" in response.data
+
+
+class TestEdgeCases:
+    """Test edge cases and error scenarios"""
+    
+    def test_fetch_patient_with_null_allergies(self, mock_db_connection):
+        """Test patient with NULL allergies field"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (1, 'John', 'Doe', 30, 'A+', None)
+        
+        result = fetch_patient_by_id(1)
+        
+        assert result is not None
+        assert result['allergies'] is None
+    
+    def test_fetch_patient_with_special_characters(self, mock_db_connection):
+        """Test patient name with special characters"""
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_db_connection.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = (1, "O'Brien", 'José-María', 30, 'A+', 'None')
+        
+        result = fetch_patient_by_id(1)
+        
+        assert result['first_name'] == "O'Brien"
+        assert result['last_name'] == 'José-María'
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
-
-
-    
+    pytest.main([__file__, '-v'])
