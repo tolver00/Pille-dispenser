@@ -1,5 +1,5 @@
 import pytest
-from python_api import app
+from python_api import app fetch_from_db
 
 @pytest.fixture
 def client():
