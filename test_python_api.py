@@ -6,8 +6,6 @@ def client():
     app.testing = True
     return app.test_client()
 
-
-
 def test_insert_into_db(client):
     response = client.post(
         "/add_patient",
@@ -22,3 +20,11 @@ def test_insert_into_db(client):
     assert response.status_code == 201
     assert response.json["message"] == "created"
 
+def test_fetch_from_db(client):
+    expected_response = {
+            "first_name": ,
+            "last_name": "test",
+            "age": 33,
+            "blood_type": "a",
+            "allergies": "none"
+    }

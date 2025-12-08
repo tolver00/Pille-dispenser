@@ -40,8 +40,34 @@ def create_patients_table():
             cur.close()
         if conn is not None:
             conn.close()
- 
+
 # create_patients_table()
+
+def create_timestamp_table():
+    try:
+        conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
+        conn = psycopg.connect(conn_string)
+        conn.autocommit = True
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE patient_records (
+                record_id SERIAL PRIMARY KEY,
+                patient_id INT NOT NULL,
+                start_date TIMESTAMP NOT NULL,
+                end_date TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+                );
+        """)
+        print("Table 'timestamps' Created.")
+    except Exception as e:
+        print(f"Error creating table: {e}")
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 # Fetch row/rows from patients table
 def fetch_from_db(patient_id):
