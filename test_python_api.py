@@ -21,10 +21,13 @@ def test_insert_into_db(client):
     assert response.json["message"] == "created"
 
 def test_fetch_from_db(client):
-    expected_response = {
-            "first_name": ,
-            "last_name": "test",
-            "age": 33,
-            "blood_type": "a",
-            "allergies": "none"
+    patient_id = 4
+    expected_record = {
+        'id': 4,
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'age': 30,
+        'blood_type': 'O',
+        'allergies': 'none'
     }
+    assert response.status_code == 200
