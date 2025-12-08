@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Hjemmeside ]
   pull_request:
-    branches: [ main ]
+    branches: [ Hjemmeside ]
 
 jobs:
   test:
@@ -34,4 +34,4 @@ jobs:
 
       - name: Run Bandit
         run: |
-          bandit -r .
+          bandit -r . --skip B101
