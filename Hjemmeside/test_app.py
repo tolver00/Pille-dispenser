@@ -112,7 +112,6 @@ def index():
 @app.route('/sysinfo')
 def sysinfo():
     patient_data = fetch_patient_by_id(1)
-    
     return render_template('sysinfo.html', patient=patient_data)
 
 
@@ -141,3 +140,6 @@ def patient_detail(patient_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+    
