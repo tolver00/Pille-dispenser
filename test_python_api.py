@@ -9,7 +9,7 @@ def client():
 
 def test_add_patient_success():
     client = app.test_client()
-
+    # open function with mock data (patch)
     with patch("python_api.insert_into_db") as mock_insert:
         response = client.post("/add_patient", json={
             "first_name": "Peter",

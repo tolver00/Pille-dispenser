@@ -91,6 +91,30 @@ def fetch_from_db(patient_id):
 
 # print(fetch_from_db(5))
 
+def fetch_patient_timestamps(patient_id):
+    conn = None
+    cur = None
+    try:
+        conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
+        conn = psycopg.connect(conn_string)
+        cur = conn.cursor(row_factory=dict_row)
+
+        cur.execute("""
+            SELECT
+
+        """)
+
+        record = cur.fetchone()
+        return record
+    except Exception as e:
+        print(f"database error: {e}")
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
+
+
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
     conn = None
@@ -128,6 +152,11 @@ class PatientOut(Schema):
     blood_type = String(required=True)
     allergies = String(required=True)
 
+# class for fetching patient timestamps
+class PatientRecordOut(Schema):
+    timestamps = Integer(required=True)
+    medicine = String(required=True)
+
 # APIFlask setup
 app = APIFlask(__name__)
 
@@ -141,6 +170,15 @@ def add_new_patient(json_data):
 @app.output(PatientOut)
 def get_patient_info(patient_id):
     record = fetch_from_db(patient_id)
+    if record:
+        return dict(record)
+    else:
+        return {'message': 'not found'}, 404
+    
+@app.get('/fetch_patient_timestamps/<int:patient_id>')
+@app.output(PatientRecordOut)
+def get_patient_record(patient_id):
+    record = fetch_patient_timestamps(patient_id)
     if record:
         return dict(record)
     else:
