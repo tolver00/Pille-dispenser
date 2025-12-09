@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ Server_resource_log ]
   pull_request:
-    branches: [ main ]
+    branches: [ Server_resource_log ]
 
 jobs:
   test:
