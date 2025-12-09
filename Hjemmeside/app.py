@@ -68,6 +68,61 @@ def fetch_all_patients():
         if conn:
             conn.close()
 
+def fetch_docker_by_id(docker_id):
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT id, timestamp, navn, status, cpu, ram, uppetid, 
+               modtagetpakker, droppedmodtagetpakker, errorsmodtagetpakker,
+               sendtepakker, droppedsendtepakker, errorssendtepakker 
+               FROM sysinfo WHERE id = %s;""",
+            (docker_id,)
+        )
+        records = cur.fetchone()
+        
+        if records:
+            columns = ['id', 'timestamp', 'navn', 'status', 'cpu', 'ram', 'uppetid',
+                      'modtagetpakker', 'droppedmodtagetpakker', 'errorsmodtagetpakker',
+                      'sendtepakker', 'droppedsendtepakker', 'errorssendtepakker']
+            return dict(zip(columns, records))
+        return None
+        
+    except Exception as e:
+        print(f"Database error: {e}")
+        return None
+        
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def fetch_all_dockers():
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""SELECT id, navn FROM sysinfo ORDER BY id;""")
+        records = cur.fetchall()
+        
+        columns = ['id', 'name']
+        return [dict(zip(columns, row)) for row in records]
+        
+    except Exception as e:
+        print(f"Database error: {e}")
+        return []
+        
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 
 app = Flask(__name__, template_folder='templates')
 
@@ -80,8 +135,17 @@ def index():
 
 @app.route('/sysinfo')
 def sysinfo():
-    patient_data = fetch_patient_by_id(1)
-    return render_template('sysinfo.html', patient=patient_data)
+    all_dockers = fetch_all_dockers()
+    return render_template('sysinfo.html', docker=None, all_dockers=all_dockers, sysinfo=None)
+
+@app.route('/sysinfo/<int:docker_id>')
+def sysinfo_detail(docker_id):
+    docker_data = fetch_docker_by_id(docker_id)
+    all_dockers = fetch_all_dockers()
+    
+    if docker_data:
+        return render_template('sysinfo.html', docker=docker_data, all_dockers=all_dockers, sysinfo=docker_data)
+    return "Docker not found", 404
 
 
 @app.route('/patients')
