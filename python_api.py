@@ -156,6 +156,7 @@ class PatientOut(Schema):
 class PatientRecordOut(Schema):
     timestamps = Integer(required=True)
     medicine = String(required=True)
+    start_date = Integer(required=True)
 
 # APIFlask setup
 app = APIFlask(__name__)
