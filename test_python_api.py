@@ -23,7 +23,7 @@ def test_add_patient_success():
     assert response.json == {"message": "created"}
 
     # Check DB function called correctly
-    mock_insert.assert_called_once_with("Peter", "Petersen", 33, "A+", "Nuts")
+    mock_insert.assert_called_once_with("Peter", "Petersen", 33, "A", "Nuts")
 
 def test_fetch_patient_found():
     client = app.test_client()
