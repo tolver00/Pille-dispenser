@@ -15,11 +15,9 @@ DB_PASSWORD=os.getenv('DB_PASSWORD')
 def resource_utilization():
     try:
         current_time = time.time()
-#        while True:
         cpu_usage = psutil.cpu_percent(interval=1)
         mem_usage = psutil.virtual_memory().percent
         free_disk = psutil.disk_usage('/').percent
-#        users = psutil.users()
         pids = len(psutil.pids())
         boot_time = psutil.boot_time()
         uptime_seconds = current_time - boot_time
