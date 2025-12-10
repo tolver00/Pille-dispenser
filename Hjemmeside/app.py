@@ -124,7 +124,7 @@ def fetch_all_dockers():
         for row in records:
             row_dict = {}
             columns = ['id', 'name']
-            
+
             for i in range(len(columns)):
                 column_name = columns[i]
                 row_dict[column_name] = row[i]
@@ -143,8 +143,8 @@ def fetch_all_dockers():
         if conn:
             conn.close()
 
-
-app = Flask(__name__, template_folder='templates')
+# ændre fra 'templates' til '/etc/nginx/templates' for at matche nginx konfiguration i Docker
+app = Flask(__name__, template_folder='/etc/nginx/templates')
 
 
 @app.route('/')
