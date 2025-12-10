@@ -55,8 +55,18 @@ def fetch_all_patients():
         cur.execute("SELECT id, first_name, last_name, age, blood_type, allergies FROM patients ORDER BY id;")
         records = cur.fetchall()
         
-        columns = ['id', 'first_name', 'last_name', 'age', 'blood_type', 'allergies']
-        return [dict(zip(columns, row)) for row in records]
+        result = []
+        for row in records:
+            row_dict = {}
+            columns = ['id', 'first_name', 'last_name', 'age', 'blood_type', 'allergies']
+
+            for i in range(len(columns)):
+                column_name = columns[i]
+                row_dict[column_name] = row[i]
+
+            result.append(row_dict)
+
+        return result
         
     except Exception as e:
         print(f"Database error: {e}")
@@ -110,8 +120,18 @@ def fetch_all_dockers():
         cur.execute("""SELECT id, navn FROM sysinfo ORDER BY id;""")
         records = cur.fetchall()
         
-        columns = ['id', 'name']
-        return [dict(zip(columns, row)) for row in records]
+        result = []
+        for row in records:
+            row_dict = {}
+            columns = ['id', 'name']
+            
+            for i in range(len(columns)):
+                column_name = columns[i]
+                row_dict[column_name] = row[i]
+
+            result.append(row_dict)
+
+        return result
         
     except Exception as e:
         print(f"Database error: {e}")
