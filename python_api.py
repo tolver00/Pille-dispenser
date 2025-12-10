@@ -50,15 +50,20 @@ def create_timestamp_table():
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute("""
-            CREATE TABLE patient_records (
-                record_id SERIAL PRIMARY KEY,
-                patient_id INT NOT NULL,
-                start_date TIMESTAMP NOT NULL,
-                end_date TIMESTAMP NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
-                );
+            CREATE TABLE IF NOT EXISTS patient_records (
+                id SERIAL PRIMARY KEY,
+
+                device_id   TEXT       NOT NULL,
+                patient_id  INTEGER    NOT NULL,
+                start_date  TIMESTAMP  NOT NULL,
+                end_date    TIMESTAMP  NOT NULL,
+                timestamps  INTEGER    NOT NULL,
+
+                CONSTRAINT fk_patient
+                    FOREIGN KEY (patient_id)
+                    REFERENCES patients(id)
+                    ON DELETE CASCADE
+            );
         """)
         print("Table 'timestamps' Created.")
     except Exception as e:
@@ -68,6 +73,7 @@ def create_timestamp_table():
             cur.close()
         if conn is not None:
             conn.close()
+# create_timestamp_table()
 
 # Fetch row/rows from patients table
 def fetch_from_db(patient_id):
@@ -91,19 +97,15 @@ def fetch_from_db(patient_id):
 
 # print(fetch_from_db(5))
 
-def fetch_patient_timestamps(patient_id):
+def fetch_patient_records(patient_id):
     conn = None
     cur = None
     try:
         conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
         conn = psycopg.connect(conn_string)
         cur = conn.cursor(row_factory=dict_row)
-
-        cur.execute("""
-            SELECT
-
-        """)
-
+        cur.execute("CALL get_patient_with_records(%s, %s);", (patient_id, None))
+        cur.execute("FETCH ALL FROM patient_records_cursor;")
         record = cur.fetchone()
         return record
     except Exception as e:
@@ -113,7 +115,7 @@ def fetch_patient_timestamps(patient_id):
             cur.close()
         if conn is not None:
             conn.close()
-
+print(fetch_patient_records(3))
 
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
@@ -154,9 +156,11 @@ class PatientOut(Schema):
 
 # class for fetching patient timestamps
 class PatientRecordOut(Schema):
+    device_id = String(required=True)
+    patient_id = Integer(required=True)
+    start_date = DateTime(required=True)
+    end_date = DateTime(required=True)
     timestamps = Integer(required=True)
-    medicine = String(required=True)
-    start_date = Integer(required=True)
 
 # APIFlask setup
 app = APIFlask(__name__)
@@ -179,7 +183,7 @@ def get_patient_info(patient_id):
 @app.get('/fetch_patient_timestamps/<int:patient_id>')
 @app.output(PatientRecordOut)
 def get_patient_record(patient_id):
-    record = fetch_patient_timestamps(patient_id)
+    record = fetch_patient_records(patient_id)
     if record:
         return dict(record)
     else:
