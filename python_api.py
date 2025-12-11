@@ -57,7 +57,8 @@ def create_timestamp_table():
                 patient_id  INTEGER    NOT NULL,
                 start_date  TIMESTAMP  NOT NULL,
                 end_date    TIMESTAMP  NOT NULL,
-                timestamps  INTEGER    NOT NULL,
+                timestamps  TEXT    NOT NULL,
+                pill_count  INTEGER NOT NULL,
 
                 CONSTRAINT fk_patient
                     FOREIGN KEY (patient_id)
@@ -115,7 +116,7 @@ def fetch_patient_records(patient_id):
             cur.close()
         if conn is not None:
             conn.close()
-print(fetch_patient_records(3))
+# print(fetch_patient_records(3))
 
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
@@ -160,7 +161,8 @@ class PatientRecordOut(Schema):
     patient_id = Integer(required=True)
     start_date = DateTime(required=True)
     end_date = DateTime(required=True)
-    timestamps = Integer(required=True)
+    timestamps = String(required=True)
+    pill_count = Integer(required=True)
 
 # APIFlask setup
 app = APIFlask(__name__)
@@ -188,3 +190,6 @@ def get_patient_record(patient_id):
         return dict(record)
     else:
         return {'message': 'not found'}, 404
+    
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
