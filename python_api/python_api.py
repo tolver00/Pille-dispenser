@@ -1,6 +1,6 @@
 import os
 from apiflask import APIFlask, Schema
-from apiflask.fields import Integer, String, DateTime
+from apiflask.fields import Integer, String, DateTime, Float
 import psycopg
 from psycopg.rows import dict_row
 from dotenv import load_dotenv
@@ -116,7 +116,7 @@ def fetch_patient_records(patient_id):
             conn.close()
 
 # Insert into patients table
-def insert_into_db(first_name, last_name, age, blood_type, allergies):
+def insert_into_db_patients(first_name, last_name, age, blood_type, allergies):
     conn = None
     cur = None
     try:
@@ -151,6 +151,54 @@ def update_heartbeat(device_id):
             cur.close()
         if conn is not None:
             conn.close()
+            
+            
+def insert_into_db_docker_logs(
+    in_time_epoch,
+    in_container_name,
+    in_container_status,
+    in_uptime_hours,
+    in_cpu_usage,
+    in_ram_usage_bytes,
+    in_rx_packets,
+    in_rx_dropped,
+    in_rx_errors,
+    in_tx_packets,
+    in_tx_dropped,
+    in_tx_errors
+):
+    conn = None
+    cur = None
+    try:
+        conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
+        sql_string = "CALL add_docker_logs(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        conn = psycopg.connect(conn_string)
+        cur = conn.cursor()
+        cur.execute(
+            sql_string,
+            (
+                in_time_epoch,
+                in_container_name,
+                in_container_status,
+                in_uptime_hours,
+                in_cpu_usage,
+                in_ram_usage_bytes,
+                in_rx_packets,
+                in_rx_dropped,
+                in_rx_errors,
+                in_tx_packets,
+                in_tx_dropped,
+                in_tx_errors
+            )
+        )
+        conn.commit()
+    except Exception as e:
+        print(f"database error: {e}")
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 # Class for inserting patient data
 class PatientIn(Schema):
@@ -159,6 +207,21 @@ class PatientIn(Schema):
     age = Integer(required=True)
     blood_type = String(required=True)
     allergies = String(required=True)
+
+# Class for inserting docker log data
+class DockerLogsIn(Schema):
+    in_time_epoch = Float(required=True)
+    in_container_name = String(required=True)
+    in_container_status = String(required=True)
+    in_uptime_hours = Integer()
+    in_cpu_usage = Float()
+    in_ram_usage_bytes = Integer()
+    in_rx_packets = Integer()
+    in_rx_dropped = Integer()
+    in_rx_errors = Integer()
+    in_tx_packets = Integer()
+    in_tx_dropped = Integer()
+    in_tx_errors = Integer()
 
 # Class for fetching patient
 class PatientOut(Schema):
@@ -183,7 +246,26 @@ app = APIFlask(__name__)
 @app.post('/add_patient')
 @app.input(PatientIn)
 def add_new_patient(json_data):
-    insert_into_db(json_data["first_name"], json_data["last_name"], json_data["age"], json_data["blood_type"], json_data["allergies"])
+    insert_into_db_patients(json_data["first_name"], json_data["last_name"], json_data["age"], json_data["blood_type"], json_data["allergies"])
+    return {'message': 'created'}, 201
+
+@app.post('/add_docker_logs')
+@app.input(DockerLogsIn)
+def add_docker_logs(json_data):
+    insert_into_db_docker_logs(
+        json_data["in_time_epoch"],
+        json_data["in_container_name"],
+        json_data["in_container_status"],
+        json_data["in_uptime_hours"],
+        json_data["in_cpu_usage"],
+        json_data["in_ram_usage_bytes"],
+        json_data["in_rx_packets"],
+        json_data["in_rx_dropped"],
+        json_data["in_rx_errors"],
+        json_data["in_tx_packets"],
+        json_data["in_tx_dropped"],
+        json_data["in_tx_errors"]
+    )
     return {'message': 'created'}, 201
 
 @app.get('/fetch_patient/<int:patient_id>')
