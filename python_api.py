@@ -41,7 +41,6 @@ def create_patients_table():
         if conn is not None:
             conn.close()
 
-# create_patients_table()
 
 def create_timestamp_table():
     try:
@@ -74,7 +73,7 @@ def create_timestamp_table():
             cur.close()
         if conn is not None:
             conn.close()
-# create_timestamp_table()
+
 
 # Fetch row/rows from patients table
 def fetch_from_db(patient_id):
@@ -96,7 +95,6 @@ def fetch_from_db(patient_id):
         if conn is not None:
             conn.close()
 
-# print(fetch_from_db(5))
 
 def fetch_patient_records(patient_id):
     conn = None
@@ -116,7 +114,6 @@ def fetch_patient_records(patient_id):
             cur.close()
         if conn is not None:
             conn.close()
-# print(fetch_patient_records(3))
 
 # Insert into patients table
 def insert_into_db(first_name, last_name, age, blood_type, allergies):
@@ -137,7 +134,23 @@ def insert_into_db(first_name, last_name, age, blood_type, allergies):
         if conn is not None:
             conn.close()
 
-# insert_into_db("per", "persen", 44, "b", "nuts")
+
+def update_heartbeat(device_id):
+    conn = None
+    cur = None
+    try:
+        conn_string = f"host={HOST} dbname={DB_NAME} user={DB_USER} password={DB_PASSWORD}"
+        conn = psycopg.connect(conn_string)
+        cur = conn.cursor()
+        cur.execute("CALL update_device_heartbeat(%s);", (device_id,))
+        conn.commit()
+    except Exception as e:
+        print(f"database error: {e}")
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 # Class for inserting patient data
 class PatientIn(Schema):
@@ -190,6 +203,12 @@ def get_patient_record(patient_id):
         return dict(record)
     else:
         return {'message': 'not found'}, 404
+
+@app.post("/device/heartbeat/<string:device_id>")
+def device_heartbeat(device_id):
+    update_heartbeat(device_id)
+    return {"device_id": device_id, "ok": True}, 200
+
     
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=41000)
