@@ -26,17 +26,16 @@ def test_add_patient_success():
 
 def test_fetch_patient_found():
     client = app.test_client()
-
     fake_record = {
-        "first_name": "Alice",
-        "last_name": "Smith",
-        "age": 28,
-        "blood_type": "B",
-        "allergies": "Dust"
+        "first_name": "Neils",
+        "last_name": "Nielsen",
+        "age": 22,
+        "blood_type": "A",
+        "allergies": "Pollen"
     }
-
     with patch("python_api.fetch_from_db", return_value=fake_record):
         response = client.get("/fetch_patient/1")
 
     assert response.status_code == 200
     assert response.json == fake_record
+
