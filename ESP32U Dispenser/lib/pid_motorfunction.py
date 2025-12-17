@@ -11,7 +11,8 @@ def dispense_pills():
 
     IN1 = PWM(16)
     IN2 = PWM(4)
-
+    IN3 = Pin(17, Pin.OUT)
+    IN4 = Pin(5, Pin.OUT)
 
     encoder = RotaryIRQ(pin_num_clk=18,
                   pin_num_dt=19,
@@ -102,8 +103,10 @@ def dispense_pills():
         # signal the motor
         setMotor(direction,pwr,IN1,IN2)
         
+        
         if direction == 0:
             break
+    
 
 
         # store previous error
@@ -111,4 +114,9 @@ def dispense_pills():
         
         
         time.sleep_ms(10)
+    
+    IN3.value(1)
+    time.sleep_ms(400)
+    IN3.value(0)
+
 

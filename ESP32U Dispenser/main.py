@@ -3,9 +3,10 @@ gc.collect()
 import time
 import network
 import ntptime
-from machine import RTC, lightsleep, reset
+from machine import Pin, RTC, lightsleep, reset
 import requests
 import json
+import pid_motorfunction
 
 def time_ms_until_next_pill(hour1,hour2,minute_current,second_current):
     
@@ -43,6 +44,8 @@ def do_connect():
             print(f"wifi statuscode {wlan.status()}")
     return wlan  
 
+timer_runs = 1
+
 wlan=do_connect()
 
 rtc = RTC()
@@ -52,10 +55,9 @@ utc_offset = list(rtc.datetime())
 utc_offset[4] = utc_offset[4] + 1
 rtc.datetime(tuple(utc_offset))
 
-timer_runs = 1
-
 request_data = requests.get('http://172.20.0.2:41000/fetch_patient_timestamps/2')
 check_data = json.loads(request_data.content)
+print('get request data', check_data)
 
 with open('time.txt') as file:
      time_data = file.read()
@@ -69,48 +71,17 @@ if check_data['start_date'] != time_data['start_date'] and check_data['end_date'
         file.close()
     time_data = check_data
     
-# test_data = {
-#   "device_id": "ESP32",
-#   "end_date": "2025-01-11T11:15:00",
-#   "patient_id": 2,
-#   "start_date": "2025-01-11T09:00:00",
-#   "timestamps": "12-14"
-# }
 
-# def save_run_timer(timer_runs):
-#     with open("time.txt",'r') as file:
-#         get_all=file.readlines()
-#         
-#     print(get_all)
-#     get_all[1] = timer_runs
-#     
-#     with open("time.txt",'a') as file:
-#         file.writelines(str(get_all))
-#         file.close()
-# 
-# 
-# with open('time.txt', 'w') as file:
-#     file.write(str(test_data))
-#     file.close()
-# 
-# with open('time.txt') as file:
-#      time_data = file.read()
-#      fixed_time_data = time_data.replace("'", "\"")
-#      time_data = json.loads(fixed_time_data)
-#      
 timestamps = tuple(time_data['timestamps'].split('-'))
-print(timestamps)
-print(time_data)
-print(rtc.datetime())
+
 
 while True:
     
     if rtc.datetime()[4] == int(timestamps[timer_runs]):
-        print(rtc.datetime())
         
-        # gør noget med motoren her!
-        
+        pid_motorfunction.dispense_pills()
         send_heartbeat = requests.post('http://172.20.0.2:41000/device/heartbeat/ESP32')
+        
         
         if timer_runs == len(timestamps)-1: #genstart state når alle tider har været igennem
             timer_runs = 0
@@ -128,3 +99,4 @@ while True:
         
         
         
+
