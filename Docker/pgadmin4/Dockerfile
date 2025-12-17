@@ -1,0 +1,10 @@
+FROM dpage/pgadmin4:latest
+
+ENV PGADMIN_DEFAULT_EMAIL=
+ENV PGADMIN_DEFAULT_PASSWORD=
+
+USER 0
+RUN mkdir -p /var/pg4/backup
+USER 5050
+
+EXPOSE 80
