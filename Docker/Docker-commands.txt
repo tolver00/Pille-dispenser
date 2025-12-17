@@ -1,0 +1,12 @@
+docker build -t 'pgadmin4-image' .
+docker run -d --name pgadmin4 -v /var/docker/.backup-SQL:/var/lib/pgadmin:rw --network pd-backend-net --ip 172.18.0.200 -p 8080:80 'pgadmin4-image'
+
+docker run -d --name PostgreSQL --network pd-backend-net --ip 172.20.0.100 -p 40315:5432 -e POSTGRES_PASSWORD= 'postgresql'
+
+docker build -t 'nginx-website' .
+docker run -d --name nginx-website -v /var/docker/nginx/templates:/etc/nginx/templates:ro -v /var/docker/nginx/app:/var/nginx/app:ro --network pd-backend-net --ip 172.18.0.250 -p 5000:5000 'nginx-website'
+
+docker build -t 'nginx-api' .
+docker run -d --name nginx-api -v /var/docker/nginx/api_app:/var/nginx/app:ro --network pd-backend-net --ip 172.18.0.220 -p 41000:6000 'nginx-api'
+
+

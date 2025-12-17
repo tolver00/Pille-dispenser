@@ -1,0 +1,18 @@
+FROM nginx
+
+USER 0
+RUN mkdir -p /var/nginx/app
+
+RUN apt update && apt install --no-install-recommends -y python3
+RUN apt install -y python3-pip
+RUN yes | pip3 install gunicorn --break-system-packages
+RUN yes | pip3 install flask --break-system-packages
+RUN yes | pip3 install 'psycopg[binary]' --break-system-packages
+RUN yes | pip3 install python-dotenv --break-system-packages
+RUN yes | pip3 install apiflask --break-system-packages
+
+WORKDIR /var/nginx/app
+
+CMD ["gunicorn", "--bind=:6000", "app:app"]
+
+EXPOSE 5000
