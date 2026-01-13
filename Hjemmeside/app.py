@@ -85,19 +85,53 @@ def fetch_docker_by_id(docker_id):
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute(
-            """SELECT id, timestamp, navn, status, cpu, ram, uppetid, 
-               modtagetpakker, droppedmodtagetpakker, errorsmodtagetpakker,
-               sendtepakker, droppedsendtepakker, errorssendtepakker 
-               FROM sysinfo WHERE id = %s;""",
+            """SELECT time_epoch, container_name, container_status, cpu_usage, ram_usage_bytes, uptime_hours, 
+                rx_packets, rx_dropped, rx_errors, tx_packets, tx_dropped, tx_errors
+               FROM docker_logs WHERE container_name = %s;""",
             (docker_id,)
         )
         records = cur.fetchone()
         
         if records:
-            columns = ['id', 'timestamp', 'navn', 'status', 'cpu', 'ram', 'uppetid',
-                      'modtagetpakker', 'droppedmodtagetpakker', 'errorsmodtagetpakker',
-                      'sendtepakker', 'droppedsendtepakker', 'errorssendtepakker']
+            columns = ['time_epoch', 'container_name', 'container_status', 'cpu_usage', 'ram_usage_bytes', 'uptime_hours',
+                      'rx_packets', 'rx_dropped', 'rx_errors', 'tx_packets', 'tx_dropped', 'tx_errors']
             return dict(zip(columns, records))
+        return None
+        
+    except Exception as e:
+        print(f"Database error: {e}")
+        return None
+        
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def fetch_docker_by_name(container_name):
+    conn = None
+    cur = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """SELECT time_epoch, container_name, container_status, cpu_usage, ram_usage_bytes, uptime_hours, 
+                rx_packets, rx_dropped, rx_errors, tx_packets, tx_dropped, tx_errors
+               FROM docker_logs
+               WHERE container_name = %s
+               ORDER BY time_epoch DESC
+               LIMIT 1;""",
+            (container_name,)
+        )
+        records = cur.fetchone()
+        
+        if records:
+            columns = ['time_epoch', 'container_name', 'container_status', 'cpu_usage', 'ram_usage_bytes', 'uptime_hours',
+                      'rx_packets', 'rx_dropped', 'rx_errors', 'tx_packets', 'tx_dropped', 'tx_errors']
+            row = dict(zip(columns, records))
+            row['name'] = row['container_name']
+            return row
         return None
         
     except Exception as e:
@@ -117,19 +151,12 @@ def fetch_all_dockers():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("""SELECT id, navn FROM sysinfo ORDER BY id;""")
+        cur.execute("""SELECT DISTINCT container_name FROM docker_logs ORDER BY container_name;""")
         records = cur.fetchall()
         
         result = []
         for row in records:
-            row_dict = {}
-            columns = ['id', 'name']
-
-            for i in range(len(columns)):
-                column_name = columns[i]
-                row_dict[column_name] = row[i]
-
-            result.append(row_dict)
+            result.append({'name': row[0]})
 
         return result
         
@@ -143,7 +170,6 @@ def fetch_all_dockers():
         if conn:
             conn.close()
 
-# ændre fra 'templates' til '/etc/nginx/templates' for at matche nginx konfiguration i Docker
 app = Flask(__name__, template_folder='/etc/nginx/templates')
 
 
@@ -158,9 +184,9 @@ def sysinfo():
     all_dockers = fetch_all_dockers()
     return render_template('sysinfo.html', docker=None, all_dockers=all_dockers, sysinfo=None)
 
-@app.route('/sysinfo/<int:docker_id>')
-def sysinfo_detail(docker_id):
-    docker_data = fetch_docker_by_id(docker_id)
+@app.route('/sysinfo/<docker_name>')
+def sysinfo_detail(docker_name):
+    docker_data = fetch_docker_by_name(docker_name)
     all_dockers = fetch_all_dockers()
     
     if docker_data:
@@ -185,4 +211,4 @@ def patient_detail(patient_id):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)

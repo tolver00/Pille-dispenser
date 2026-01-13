@@ -129,8 +129,8 @@
           <option value="">-- Vælg en docker --</option>
           {% if all_dockers %}
             {% for d in all_dockers %}
-              <option value="{{ d.id }}" {% if docker and docker.id == d.id %}selected{% endif %}>
-                {{ d.name }} (ID: {{ d.id }})
+              <option value="{{ d.name }}" {% if docker and docker.name == d.name %}selected{% endif %}>
+                {{ d.name }}
               </option>
             {% endfor %}
           {% endif %}
@@ -142,68 +142,63 @@
         <h2 style="margin-top: 0; color: #0066cc;">Docker Information</h2>
         
         <div class="info-row">
-          <span class="info-label">ID:</span>
-          <span class="info-value">{{ sysinfo.id }}</span>
+          <span class="info-label">Containter_name:</span>
+          <span class="info-value">{{ sysinfo.container_name }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Timestamp:</span>
-          <span class="info-value">{{ sysinfo.timestamp }}</span>
+          <span class="info-label">Time_epoch:</span>
+          <span class="info-value">{{ sysinfo.time_epoch }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Navn:</span>
-          <span class="info-value">{{ sysinfo.navn }}</span>
+          <span class="info-label">Container_status:</span>
+          <span class="info-value">{{ sysinfo.container_status }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Status:</span>
-          <span class="info-value">{{ sysinfo.status }}</span>
+          <span class="info-label">Cpu_usage:</span>
+          <span class="info-value">{{ sysinfo.cpu_usage }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Cpu %:</span>
-          <span class="info-value">{{ sysinfo.cpu }}</span>
+          <span class="info-label">Ram_usage:</span>
+          <span class="info-value">{{ sysinfo.ram_usage_bytes }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Ram:</span>
-          <span class="info-value">{{ sysinfo.ram }}</span>
+          <span class="info-label">Uptime:</span>
+          <span class="info-value">{{ sysinfo.uptime_hours }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Uppetid:</span>
-          <span class="info-value">{{ sysinfo.uppetid }}</span>
+          <span class="info-label">rx_packets:</span>
+          <span class="info-value">{{ sysinfo.rx_packets }}</span>
         </div>
 
         <div class="info-row">
-          <span class="info-label">Modtaget pakker:</span>
-          <span class="info-value">{{ sysinfo.modtagetpakker }}</span>
+          <span class="info-label">rx_dropped:</span>
+          <span class="info-value">{{ sysinfo.rx_dropped }}</span>
         </div>
 
         <div class="info-row">
-          <span class="info-label">Dropped:</span>
-          <span class="info-value">{{ sysinfo.droppedmodtagetpakker }}</span>
+          <span class="info-label">rx_errors:</span>
+          <span class="info-value">{{ sysinfo.rx_errors }}</span>
         </div>
         
         <div class="info-row">
-          <span class="info-label">Errors:</span>
-          <span class="info-value">{{ sysinfo.errorsmodtagetpakker }}</span>
+          <span class="info-label">tx_packets:</span>
+          <span class="info-value">{{ sysinfo.tx_packets }}</span>
         </div>
 
         <div class="info-row">
-          <span class="info-label">Sendte pakker:</span>
-          <span class="info-value">{{ sysinfo.sendtepakker }}</span>
+          <span class="info-label">tx_dropped:</span>
+          <span class="info-value">{{ sysinfo.tx_dropped }}</span>
         </div>
 
         <div class="info-row">
-          <span class="info-label">Dropped:</span>
-          <span class="info-value">{{ sysinfo.droppedsendtepakker }}</span>
-        </div>
-
-        <div class="info-row">
-          <span class="info-label">Errors:</span>
-          <span class="info-value">{{ sysinfo.errorssendtepakker }}</span>
+          <span class="info-label">tx_errors:</span>
+          <span class="info-value">{{ sysinfo.tx_errors }}</span>
         </div>
       </div>
       {% else %}
